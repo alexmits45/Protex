@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Inicio de Sesión</title>
+  <style>
+    /* Fondo cuadriculado */
+    .container {
+      width: 100%;
+      height: 100vh;
+      --color: rgba(114, 114, 114, 0.3);
+      background-color: #191a1a;
+      background-image: linear-gradient(0deg, transparent 24%, var(--color) 25%, var(--color) 26%, transparent 27%,transparent 74%, var(--color) 75%, var(--color) 76%, transparent 77%,transparent),
+          linear-gradient(90deg, transparent 24%, var(--color) 25%, var(--color) 26%, transparent 27%,transparent 74%, var(--color) 75%, var(--color) 76%, transparent 77%,transparent);
+      background-size: 55px 55px;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Caja del formulario */
+    .form_area {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      background-color: #EDDCD9;
+      border: 2px solid #264143;
+      border-radius: 20px;
+      box-shadow: 3px 4px 0px 1px #E99F4C;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .title {
+      color: #264143;
+      font-weight: 900;
+      font-size: 1.5em;
+      margin-top: 10px;
+    }
+
+    .sub_title {
+      font-weight: 600;
+      margin: 5px 0;
+    }
+
+    .form_group {
+      display: flex;
+      flex-direction: column;
+      align-items: baseline;
+      margin: 10px;
+    }
+
+    .form_style {
+      outline: none;
+      border: 2px solid #264143;
+      box-shadow: 3px 4px 0px 1px #E99F4C;
+      width: 290px;
+      padding: 12px 10px;
+      border-radius: 4px;
+      font-size: 15px;
+    }
+
+    .form_style:focus, .btn:focus {
+      transform: translateY(4px);
+      box-shadow: 1px 2px 0px 0px #E99F4C;
+    }
+
+    .btn {
+      padding: 15px;
+      margin: 25px 0px;
+      width: 290px;
+      font-size: 15px;
+      background: #DE5499;
+      border-radius: 10px;
+      font-weight: 800;
+      box-shadow: 3px 3px 0px 0px #E99F4C;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      opacity: .9;
+    }
+
+    .link {
+      font-weight: 800;
+      color: #264143;
+      padding: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Panel de login -->
+    <div id="panelLogin" class="form_area">
+      <p class="title">LOGIN</p>
+      <form id="formLogin">
+        <div class="form_group">
+          <label class="sub_title" for="loginCorreo">Email</label>
+          <input placeholder="Correo electrónico" id="loginCorreo" class="form_style" type="email" required>
+        </div>
+        <div class="form_group">
+          <label class="sub_title" for="loginClave">Password</label>
+          <input placeholder="Contraseña" id="loginClave" class="form_style" type="password" required>
+        </div>
+        <button type="submit" class="btn">Iniciar Sesión</button>
+      </form>
+      <p>¿No tienes cuenta? <span class="link" onclick="mostrarRegistro()">Regístrate aquí</span></p>
+    </div>
+
+    <!-- Panel de registro -->
+    <div id="panelRegistro" class="form_area" style="display:none;">
+      <p class="title">SIGN UP</p>
+      <form id="formRegistro">
+        <div class="form_group">
+          <label class="sub_title" for="nombre">Nombre completo</label>
+          <input placeholder="Ingresa tu nombre" id="nombre" class="form_style" type="text" required>
+        </div>
+        <div class="form_group">
+          <label class="sub_title" for="correo">Email</label>
+          <input placeholder="Ingresa tu correo" id="correo" class="form_style" type="email" required>
+        </div>
+        <div class="form_group">
+          <label class="sub_title" for="clave">Password</label>
+          <input placeholder="Contraseña (no la del correo)" id="clave" class="form_style" type="password" required>
+        </div>
+        <button type="submit" class="btn">Registrarse</button>
+      </form>
+      <p>¿Ya tienes cuenta? <span class="link" onclick="mostrarLogin()">Inicia sesión aquí</span></p>
+    </div>
+
+    <!-- Panel de usuario -->
+    <div id="panelUsuario" class="form_area" style="display:none;">
+      <p id="info"></p>
+      <p id="saldo"></p>
+      <p id="aviso"></p>
+      <button id="recargar" class="btn">Recargar crédito</button>
+      <button id="cerrarSesion" class="btn">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <script>
+    function generarCodigo() {
+      return 'COD-' + Math.random().toString(36).substr(2, 8).toUpperCase();
+    }
+
+    function mostrarRegistro() {
+      document.getElementById('panelLogin').style.display = 'none';
+      document.getElementById('panelRegistro').style.display = 'block';
+    }
+
+    function mostrarLogin() {
+      document.getElementById('panelRegistro').style.display = 'none';
+      document.getElementById('panelLogin').style.display = 'block';
+    }
+
+    // Registro
+    document.getElementById('formRegistro').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre').value;
+      const correo = document.getElementById('correo').value;
+      const clave = document.getElementById('clave').value;
+      const codigo = generarCodigo();
+
+      localStorage.setItem('nombreUsuario', nombre);
+      localStorage.setItem('correoUsuario', correo);
+      localStorage.setItem('claveUsuario', clave);
+      localStorage.setItem('codigoUsuario', codigo);
+      localStorage.setItem('saldoUsuario', 0);
+
+      alert("Registro exitoso. Ahora inicia sesión.");
+      mostrarLogin();
+    });
+
+    // Login
+    document.getElementById('formLogin').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const correo = document.getElementById('loginCorreo').value;
+      const clave = document.getElementById('loginClave').value;
+
+      const correoGuardado = localStorage.getItem('correoUsuario');
+      const claveGuardada = localStorage.getItem('claveUsuario');
+
+      if (correo === correoGuardado && clave === claveGuardada) {
+        mostrarUsuario();
+      } else {
+        alert("Correo o contraseña incorrectos.");
+      }
+    });
+
+    function mostrarUsuario() {
+      const nombre = localStorage.getItem('nombreUsuario');
+      const codigo = localStorage.getItem('codigoUsuario');
+      const saldo = localStorage.getItem('saldoUsuario');
+
+      document.getElementById('info').textContent = 
+        `Bienvenido, ${nombre}. Tu código es: ${codigo}`;
+      document.getElementById('saldo').textContent = 
+        `Saldo de tu cuenta: $${saldo}`;
+      document.getElementById('panelLogin').style.display = 'none';
+      document.getElementById('panelUsuario').style.display = 'block';
+      document.getElementById('aviso').textContent = "";
+    }
+
+    // Botón de recargar
+    document.getElementById('recargar').addEventListener('click', function() {
+      document.getElementById('aviso').textContent = 
+        "En 3 minutos máximo se recargará su crédito.";
+      localStorage.setItem('avisoRecarga', "pendiente");
+    });
+
+    document.getElementById('cerrarSesion').addEventListener('click', function() {
+      document.getElementById('panelUsuario').style.display = 'none';
+      document.getElementById('panelLogin').style.display = 'block';
+    });
+  </script>
+</body>
+</html>
