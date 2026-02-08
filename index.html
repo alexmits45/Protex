@@ -149,87 +149,20 @@
   </div>
 
   <script>
-    function generarCodigo() {
-      return 'COD-' + Math.random().toString(36).substr(2, 8).toUpperCase();
-    }
+  function generarCodigo() {
+    return 'COD-' + Math.random().toString(36).substr(2, 8).toUpperCase();
+  }
 
-    function mostrarRegistro() {
-      document.getElementById('panelLogin').style.display = 'none';
-      document.getElementById('panelRegistro').style.display = 'block';
-    }
+  function mostrarRegistro() {
+    document.getElementById('panelLogin').style.display = 'none';
+    document.getElementById('panelRegistro').style.display = 'block';
+  }
 
-    function mostrarLogin() {
-      document.getElementById('panelRegistro').style.display = 'none';
-      document.getElementById('panelLogin').style.display = 'block';
-    }
-
-    // Registro
-    document.getElementById('formRegistro').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const nombre = document.getElementById('nombre').value;
-      const correo = document.getElementById('correo').value;
-      const clave = document.getElementById('clave').value;
-      const codigo = generarCodigo();
-
-      localStorage.setItem('nombreUsuario', nombre);
-      localStorage.setItem('correoUsuario', correo);
-      localStorage.setItem('claveUsuario', clave);
-      localStorage.setItem('codigoUsuario', codigo);
-      localStorage.setItem('saldoUsuario', 0);
-
-      alert("Registro exitoso. Ahora inicia sesión.");
-      mostrarLogin();
-    });
-
-    // Login
-    document.getElementById('formLogin').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const correo = document.getElementById('loginCorreo').value;
-      const clave = document.getElementById('loginClave').value;
-
-      const correoGuardado = localStorage.getItem('correoUsuario');
-      const claveGuardada = localStorage.getItem('claveUsuario');
-
-      if (correo === correoGuardado && clave === claveGuardada) {
-        mostrarUsuario();
-      } else {
-        alert("Correo o contraseña incorrectos.");
-      }
-    });
-
-    function mostrarUsuario() {
-      const nombre = localStorage.getItem('nombreUsuario');
-      const codigo = localStorage.getItem('codigoUsuario');
-      const saldo = localStorage.getItem('saldoUsuario');
-
-      document.getElementById('info').textContent = 
-        `Bienvenido, ${nombre}. Tu código es: ${codigo}`;
-      document.getElementById('saldo').textContent = 
-        `Saldo de tu cuenta: $${saldo}`;
-      document.getElementById('panelLogin').style.display = 'none';
-      document.getElementById('panelUsuario').style.display = 'block';
-      document.getElementById('aviso').textContent = "";
-    }
-
-  document.getElementById('recargar').addEventListener('click', function() {
-  const nombre = localStorage.getItem('nombreUsuario');
-  const correo = localStorage.getItem('correoUsuario');
-  const codigo = localStorage.getItem('codigoUsuario');
-
-  emailjs.send("service_vlfyd3l", "template_944f6ze", {
-    nombre: nombre,
-    correo: correo,
-    codigo: codigo
-  }).then(function() {
-    document.getElementById('aviso').textContent =
-      "Solicitud enviada. En breve se recargará tu crédito.";
-  }, function(error) {
-    document.getElementById('aviso').textContent =
-      "Error al enviar la solicitud.";
-    console.error("EmailJS error:", error);
-  });
-});
-  </script>
+  function mostrarLogin() {
+    document.getElementById('panelRegistro').style.display = 'none';
+    document.getElementById('panelLogin').style.display = 'block';
+  }
+</script>
   <script type="module" src="firebase.js"></script>
   <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
