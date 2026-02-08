@@ -148,25 +148,9 @@
     </div>
   </div>
 
-  <script>
-  function generarCodigo() {
-    return 'COD-' + Math.random().toString(36).substr(2, 8).toUpperCase();
-  }
-
-  function mostrarRegistro() {
-    document.getElementById('panelLogin').style.display = 'none';
-    document.getElementById('panelRegistro').style.display = 'block';
-  }
-
-  function mostrarLogin() {
-    document.getElementById('panelRegistro').style.display = 'none';
-    document.getElementById('panelLogin').style.display = 'block';
-  }
-</script>
-  <script type="module" src="firebase.js"></script>
   <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA1ZN3FisKZoRoJY4XInerpgUjjqv0d-8I",
@@ -180,25 +164,100 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// --- REGISTRO ---
 document.getElementById("formRegistro").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const nombre = document.getElementById("nombre").value;
   const correo = document.getElementById("correo").value;
   const clave = document.getElementById("clave").value;
-  const codigo = "COD-" + Math.random().toString(36).substr(2,8).toUpperCase();
 
-  await setDoc(doc(db, "usuarios", correo), {
+  if (!nombre || !correo || !clave) return alert("Completa todos los campos");
+
+  const ref = doc(db, "usuarios", correo);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) return alert("Ese correo ya está registrado");
+
+  await setDoc(ref, {
     nombre,
     correo,
     clave,
-    codigo,
+    codigo: "COD-" + Math.random().toString(36).substr(2, 8).toUpperCase(),
     saldo: 0
   });
 
-  localStorage.setItem("correoUsuario", correo); // 👈 clave para luego leerlo
+  alert("Usuario registrado correctamente. Ahora inicia sesión.");
+  mostrarLogin();
+});
 
-  alert("Usuario registrado correctamente Ahora inicia sesión.");
+// --- LOGIN ---
+document.getElementById("formLogin").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const correo = document.getElementById("loginCorreo").value;
+  const clave = document.getElementById("loginClave").value;
+
+  const ref = doc(db, "usuarios", correo);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) return alert("Usuario no existe");
+
+  const data = snap.data();
+  if (data.clave !== clave) return alert("Contraseña incorrecta");
+
+  localStorage.setItem("correoUsuario", correo);
+
+  // Mostrar panel de usuario
+  document.getElementById("panelLogin").style.display = "none";
+  document.getElementById("panelUsuario").style.display = "block";
+  document.getElementById("info").textContent = "Hola " + data.nombre;
+  document.getElementById("saldo").textContent = "Saldo: $" + data.saldo;
+});
+
+// --- AUTO LOGIN ---
+window.addEventListener("load", async () => {
+  const guardado = localStorage.getItem("correoUsuario");
+  if (!guardado) return;
+
+  const ref = doc(db, "usuarios", guardado);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+  document.getElementById("panelLogin").style.display = "none";
+  document.getElementById("panelUsuario").style.display = "block";
+  document.getElementById("info").textContent = "Hola " + data.nombre;
+  document.getElementById("saldo").textContent = "Saldo: $" + data.saldo;
+});
+// --- CERRAR SESIÓN ---
+document.getElementById("cerrarSesion").addEventListener("click", () => {
+  localStorage.removeItem("correoUsuario"); // Borra el usuario guardado
+  document.getElementById("panelUsuario").style.display = "none";
+  document.getElementById("panelLogin").style.display = "block";
+});
+// --- RECARGAR CRÉDITO ---
+document.getElementById("recargar").addEventListener("click", () => {
+  const nombre = localStorage.getItem("nombreUsuario");
+  const correo = localStorage.getItem("correoUsuario");
+  const codigo = localStorage.getItem("codigoUsuario");
+
+  if (!correo) return alert("No se detecta usuario logueado");
+
+  emailjs.send("service_vlfyd3l", "template_944f6ze", {
+    nombre: nombre,
+    correo: correo,
+    codigo: codigo
+  })
+  .then(() => {
+    document.getElementById("aviso").textContent =
+      "Solicitud enviada. En breve se recargará tu crédito.";
+  })
+  .catch((error) => {
+    document.getElementById("aviso").textContent =
+      "Error al enviar la solicitud.";
+    console.error("EmailJS error:", error);
+  });
 });
 </script>
 </body>
