@@ -233,7 +233,7 @@
   <script type="module" src="firebase.js"></script>
   <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA1ZN3FisKZoRoJY4XInerpgUjjqv0d-8I",
@@ -255,7 +255,7 @@ document.getElementById("formRegistro").addEventListener("submit", async (e) => 
   const clave = document.getElementById("clave").value;
   const codigo = "COD-" + Math.random().toString(36).substr(2,8).toUpperCase();
 
-  await addDoc(collection(db, "usuarios"), {
+  await setDoc(doc(db, "usuarios", correo), {
     nombre,
     correo,
     clave,
@@ -263,7 +263,9 @@ document.getElementById("formRegistro").addEventListener("submit", async (e) => 
     saldo: 0
   });
 
-  alert("Usuario registrado y guardado en Firebase 🔥");
+  localStorage.setItem("correoUsuario", correo); // 👈 clave para luego leerlo
+
+  alert("Usuario registrado correctamente Ahora inicia sesión.");
 });
 </script>
 </body>
