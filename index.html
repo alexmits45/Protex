@@ -99,6 +99,18 @@
   })();
 </script>
 <body>
+      <!-- Anuncio de Google -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4006965729567771"
+     crossorigin="anonymous"></script>
+  <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-4006965729567771"
+       data-ad-slot="2257923551"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+  <script>
+       (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
   <div class="container">
     <!-- Panel de login -->
     <div id="panelLogin" class="form_area">
@@ -139,12 +151,17 @@
     </div>
 
     <!-- Panel de usuario -->
-    <div id="panelUsuario" class="form_area" style="display:none;">
-      <p id="info"></p>
-      <p id="saldo"></p>
-      <p id="aviso"></p>
-      <button id="recargar" class="btn">Recargar crédito</button>
-      <button id="cerrarSesion" class="btn">Cerrar Sesión</button>
+    <!-- Panel de usuario -->
+<div id="panelUsuario" class="form_area" style="display:none;">
+  <p id="info"></p>
+  <p id="saldo"></p>
+  <p id="aviso"></p>
+
+  <button id="pagoEconomico" class="btn">Paquete $50</button>
+  <button id="pagoPremium" class="btn">Paquete $150</button>
+
+  <button id="cerrarSesion" class="btn">Cerrar Sesión</button>
+</div>
     </div>
   </div>
 
@@ -205,8 +222,10 @@ document.getElementById("formLogin").addEventListener("submit", async (e) => {
 
   const data = snap.data();
   if (data.clave !== clave) return alert("Contraseña incorrecta");
-
+  
   localStorage.setItem("correoUsuario", correo);
+localStorage.setItem("nombreUsuario", data.nombre);
+localStorage.setItem("codigoUsuario", data.codigo);
 
   // Mostrar panel de usuario
   document.getElementById("panelLogin").style.display = "none";
@@ -236,29 +255,70 @@ document.getElementById("cerrarSesion").addEventListener("click", () => {
   document.getElementById("panelUsuario").style.display = "none";
   document.getElementById("panelLogin").style.display = "block";
 });
-// --- RECARGAR CRÉDITO ---
-document.getElementById("recargar").addEventListener("click", () => {
-  const nombre = localStorage.getItem("nombreUsuario");
+
+// --- MOSTRAR REGISTRO ---
+window.mostrarRegistro = function () {
+  document.getElementById("panelLogin").style.display = "none";
+  document.getElementById("panelRegistro").style.display = "block";
+  document.getElementById("panelUsuario").style.display = "none";
+};
+
+// --- MOSTRAR LOGIN ---
+window.mostrarLogin = function () {
+  document.getElementById("panelRegistro").style.display = "none";
+  document.getElementById("panelLogin").style.display = "block";
+  document.getElementById("panelUsuario").style.display = "none";
+};
+// --- DETECTAR PAGO SIMULADO ---
+const params = new URLSearchParams(window.location.search);
+const success = params.get("success");
+const pack = params.get("pack");
+
+if (success === "true" && pack) {
   const correo = localStorage.getItem("correoUsuario");
-  const codigo = localStorage.getItem("codigoUsuario");
 
-  if (!correo) return alert("No se detecta usuario logueado");
+  if (correo) {
+    const ref = doc(db, "usuarios", correo);
+    const snap = await getDoc(ref);
 
-  emailjs.send("service_vlfyd3l", "template_944f6ze", {
-    nombre: nombre,
-    correo: correo,
-    codigo: codigo
-  })
-  .then(() => {
-    document.getElementById("aviso").textContent =
-      "Solicitud enviada. En breve se recargará tu crédito.";
-  })
-  .catch((error) => {
-    document.getElementById("aviso").textContent =
-      "Error al enviar la solicitud.";
-    console.error("EmailJS error:", error);
-  });
+    if (snap.exists()) {
+      let saldoActual = snap.data().saldo;
+      let aumento = pack === "50" ? 50 : 150;
+
+      await setDoc(ref, {
+        ...snap.data(),
+        saldo: saldoActual + aumento
+      });
+
+      document.getElementById("saldo").textContent =
+        "Saldo: $" + (saldoActual + aumento);
+
+      alert("Pago exitoso. Se recargó tu saldo.");
+
+      // Limpia la URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+}
+document.addEventListener("DOMContentLoaded", () => {
+
+  const btnEco = document.getElementById("pagoEconomico");
+  const btnPro = document.getElementById("pagoPremium");
+
+  if (btnEco) {
+    btnEco.addEventListener("click", () => {
+      window.location.href = window.location.pathname + "?success=true&pack=50";
+    });
+  }
+
+  if (btnPro) {
+    btnPro.addEventListener("click", () => {
+      window.location.href = window.location.pathname + "?success=true&pack=150";
+    });
+  }
+
 });
 </script>
+<script src="https://js.stripe.com/v3/"></script>
 </body>
 </html>
