@@ -84,12 +84,19 @@
       opacity: .9;
     }
 
-    .link {
-      font-weight: 800;
-      color: #264143;
-      padding: 5px;
-      cursor: pointer;
-    }
+@media (max-width: 600px) {
+  .container {
+    padding: 10px;
+    background-size: 35px 35px;  /* ajusta cuadriculado */
+    flex-direction: column;
+
+    /* IMPORTANTE: mantener fondo cuadriculado */
+    background-color: #191a1a;
+    background-image: linear-gradient(0deg, transparent 24%, rgba(114, 114, 114, 0.3) 25%, rgba(114, 114, 114, 0.3) 26%, transparent 27%,transparent 74%, rgba(114, 114, 114, 0.3) 75%, rgba(114, 114, 114, 0.3) 76%, transparent 77%,transparent),
+                      linear-gradient(90deg, transparent 24%, rgba(114, 114, 114, 0.3) 25%, rgba(114, 114, 114, 0.3) 26%, transparent 27%,transparent 74%, rgba(114, 114, 114, 0.3) 75%, rgba(114, 114, 114, 0.3) 76%, transparent 77%,transparent);
+  }
+}
+}
   </style>
 </head>
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
@@ -309,19 +316,15 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script src="https://js.stripe.com/v3/"></script>
 <!-- Google AdSense: in-article fluido -->
-<!-- Pega este bloque dentro del <body> donde quieras mostrar el anuncio -->
-
-<!-- Cargador de AdSense (solo una vez por página) -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4006965729567771"
         crossorigin="anonymous"></script>
 
-<!-- Bloque de anuncio -->
+<!-- Bloque de anuncio autorelaxed -->
 <ins class="adsbygoogle"
      style="display:block; text-align:center;"
-     data-ad-layout="in-article"
-     data-ad-format="fluid"
+     data-ad-format="autorelaxed"
      data-ad-client="ca-pub-4006965729567771"
-     data-ad-slot="7518369966"></ins>
+     data-ad-slot="6914358010"></ins>
 <script>
      (adsbygoogle = window.adsbygoogle || []).push({});
 </script>
