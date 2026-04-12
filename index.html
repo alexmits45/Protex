@@ -50,6 +50,17 @@
       align-items: center;
     }
 
+    #contacts {
+      background: #2b2c33;
+      padding: 10px;
+      font-size: 12px;
+    }
+
+    .contact {
+      padding: 4px;
+      border-bottom: 1px solid #444;
+    }
+
     #messages {
       flex: 1;
       overflow-y: auto;
@@ -63,6 +74,23 @@
       border-radius: 8px;
       max-width: 80%;
     }
+
+    .me {
+      background: #19c37d;
+      align-self: flex-end;
+    }
+
+    .actions {
+      font-size: 10px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+
+    img {
+      max-width: 200px;
+      border-radius: 10px;
+      margin-top: 5px;
+    }
   </style>
 </head>
 
@@ -70,12 +98,12 @@
 
 <!-- LOGIN -->
 <div id="login" class="login-box">
-  <button onclick="loginGoogle()">Iniciar con Google</button>
+  <button onclick="loginGoogle()">Google</button>
 
   <input id="email" placeholder="Correo">
   <input id="password" type="password" placeholder="Contraseña">
 
-  <button onclick="loginEmail()">Entrar / Registrarse</button>
+  <button onclick="loginEmail()">Entrar</button>
 </div>
 
 <!-- CHAT -->
@@ -86,28 +114,33 @@
     <button onclick="logout()">Salir</button>
   </div>
 
+  <div id="contacts"></div>
+
   <div id="messages"></div>
 
-  <div style="display:flex; padding:10px; gap:5px;">
-    <input id="mensaje" placeholder="Escribe un mensaje..." style="flex:1;">
+  <div style="display:flex; gap:5px; padding:10px;">
+    <input id="mensaje" placeholder="Mensaje" style="flex:1;">
+    <input type="file" id="file">
     <button onclick="enviar()">Enviar</button>
+    <button onclick="enviarArchivo()">📎</button>
   </div>
 
 </div>
 
 <script type="module">
 
-// ================= FIREBASE IMPORTS (CDN CORRECTO) =================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-
 import {
   getFirestore,
   collection,
   addDoc,
   onSnapshot,
   query,
-  orderBy
+  orderBy,
+  deleteDoc,
+  doc,
+  updateDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import {
@@ -121,10 +154,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 import {
-  getStorage
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// ================= TU CONFIG REAL =================
+// 🔥 TU CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCJxRJfJ2fWZPKaBeOVS7BFOWeDM_WH6MU",
   authDomain: "nexchat-382ba.firebaseapp.com",
@@ -136,73 +172,101 @@ const firebaseConfig = {
   measurementId: "G-Y2WLJPE5RV"
 };
 
-// ================= INIT FIREBASE =================
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
 const db = getFirestore(app);
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 const storage = getStorage(app);
+const provider = new GoogleAuthProvider();
 
-const msgInput = document.getElementById("mensaje");
+let editId = null;
 
-// ================= LOGIN GOOGLE =================
-window.loginGoogle = async () => {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (e) {
-    console.log(e);
-    alert("Error login Google");
-  }
-};
+// 🔔 NOTIFICACIONES
+if ("Notification" in window) {
+  Notification.requestPermission();
+}
 
-// ================= LOGIN EMAIL =================
+// LOGIN
+window.loginGoogle = () => signInWithPopup(auth, provider);
+
 window.loginEmail = async () => {
   const email = document.getElementById("email").value;
   const pass = document.getElementById("password").value;
 
-  if (!email || !pass) return alert("Falta correo o contraseña");
-
   try {
     await createUserWithEmailAndPassword(auth, email, pass);
   } catch {
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-    } catch (e) {
-      console.log(e);
-      alert("Error login");
-    }
+    await signInWithEmailAndPassword(auth, email, pass);
   }
 };
 
-// ================= LOGOUT =================
 window.logout = () => signOut(auth);
 
-// ================= ESTADO LOGIN =================
-onAuthStateChanged(auth, (user) => {
+// USUARIO
+onAuthStateChanged(auth, async (user) => {
   document.getElementById("login").style.display = user ? "none" : "flex";
   document.getElementById("chatUI").style.display = user ? "flex" : "none";
 
-  if (user) listenMessages();
+  if (!user) return;
+
+  // guardar contacto
+  await setDoc(doc(db, "users", user.uid), {
+    uid: user.uid,
+    email: user.email,
+    lastSeen: Date.now()
+  });
+
+  loadContacts();
+  listenMessages();
 });
 
-// ================= ENVIAR MENSAJE =================
+// CONTACTOS
+function loadContacts() {
+  onSnapshot(collection(db, "users"), (snap) => {
+    const div = document.getElementById("contacts");
+    div.innerHTML = "<b>Contactos</b>";
+
+    snap.forEach(u => {
+      div.innerHTML += `<div class="contact">🟢 ${u.data().email}</div>`;
+    });
+  });
+}
+
+// ENVIAR MENSAJE
 window.enviar = async () => {
   const user = auth.currentUser;
-  if (!user || !msgInput.value) return;
+  const msg = document.getElementById("mensaje").value;
+  if (!user || !msg) return;
 
   await addDoc(collection(db, "mensajes"), {
-    mensaje: msgInput.value,
+    mensaje: msg,
     usuario: user.email,
     uid: user.uid,
     fecha: Date.now()
   });
 
-  msgInput.value = "";
+  document.getElementById("mensaje").value = "";
 };
 
-// ================= MENSAJES EN TIEMPO REAL =================
+// SUBIR ARCHIVO
+window.enviarArchivo = async () => {
+  const file = document.getElementById("file").files[0];
+  const user = auth.currentUser;
+
+  if (!file || !user) return;
+
+  const fileRef = ref(storage, "chat/" + Date.now() + file.name);
+  await uploadBytes(fileRef, file);
+  const url = await getDownloadURL(fileRef);
+
+  await addDoc(collection(db, "mensajes"), {
+    usuario: user.email,
+    uid: user.uid,
+    image: url,
+    fecha: Date.now()
+  });
+};
+
+// MENSAJES
 function listenMessages() {
   const q = query(collection(db, "mensajes"), orderBy("fecha", "asc"));
 
@@ -210,21 +274,34 @@ function listenMessages() {
     const div = document.getElementById("messages");
     div.innerHTML = "";
 
-    snap.forEach(doc => {
-      const m = doc.data();
+    snap.forEach(d => {
+      const m = d.data();
+      const isMe = auth.currentUser?.uid === m.uid;
 
       const msg = document.createElement("div");
-      msg.className = "msg";
-      msg.textContent = `${m.usuario}: ${m.mensaje}`;
+      msg.className = "msg " + (isMe ? "me" : "");
+
+      msg.innerHTML = `
+        <b>${m.usuario}</b><br>
+        ${m.mensaje || ""}
+        ${m.image ? `<br><img src="${m.image}">` : ""}
+      `;
 
       div.appendChild(msg);
+
+      // 🔔 NOTIFICACIÓN
+      if (document.hidden && m.uid !== auth.currentUser?.uid) {
+        new Notification("Nuevo mensaje", {
+          body: m.usuario
+        });
+      }
     });
 
     div.scrollTop = div.scrollHeight;
   });
 }
 
-// ================= ENTER =================
+// ENTER
 document.addEventListener("keydown", (e) => {
   if (e.key === "Enter") enviar();
 });
