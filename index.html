@@ -1,29 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>NexChat Pro</title>
+  <title>NexChat WhatsApp</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
       margin: 0;
       font-family: Arial;
-      background: #202123;
+      background: #111b21;
       color: white;
+      display: flex;
     }
 
-    .login-box {
+    /* SIDEBAR CHATS */
+    .sidebar {
+      width: 30%;
+      background: #202c33;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .chat-item {
+      padding: 12px;
+      border-bottom: 1px solid #2a3942;
+      cursor: pointer;
+    }
+
+    .chat-item:hover {
+      background: #2a3942;
+    }
+
+    /* CHAT AREA */
+    .chat-area {
+      width: 70%;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      padding: 20px;
+      height: 100vh;
+    }
+
+    .topbar {
+      background: #202c33;
+      padding: 10px;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .msg {
+      max-width: 70%;
+      padding: 8px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    .me {
+      background: #005c4b;
+      align-self: flex-end;
+    }
+
+    .other {
+      background: #202c33;
+      align-self: flex-start;
+    }
+
+    .input {
+      display: flex;
+      padding: 10px;
+      background: #202c33;
+      gap: 5px;
     }
 
     input {
+      flex: 1;
       padding: 10px;
-      border-radius: 8px;
       border: none;
-      background: #40414F;
+      border-radius: 8px;
+      background: #2a3942;
       color: white;
     }
 
@@ -31,98 +90,42 @@
       padding: 10px;
       border: none;
       border-radius: 8px;
-      background: #19c37d;
+      background: #00a884;
       color: white;
       cursor: pointer;
     }
 
-    .container {
-      display: none;
-      height: 100vh;
-      flex-direction: column;
-    }
-
-    .topbar {
-      background: #2b2c33;
+    .add-contact {
       padding: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    #contacts {
-      background: #2b2c33;
-      padding: 10px;
-      font-size: 12px;
-    }
-
-    .contact {
-      padding: 4px;
-      border-bottom: 1px solid #444;
-    }
-
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
-    }
-
-    .msg {
-      background: #2E2F3A;
-      margin: 5px 0;
-      padding: 8px;
-      border-radius: 8px;
-      max-width: 80%;
-    }
-
-    .me {
-      background: #19c37d;
-      align-self: flex-end;
-    }
-
-    .actions {
-      font-size: 10px;
-      cursor: pointer;
-      margin-top: 5px;
-    }
-
-    img {
-      max-width: 200px;
-      border-radius: 10px;
-      margin-top: 5px;
+      background: #111b21;
     }
   </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="login" class="login-box">
-  <button onclick="loginGoogle()">Google</button>
+<!-- SIDEBAR -->
+<div class="sidebar">
 
-  <input id="email" placeholder="Correo">
-  <input id="password" type="password" placeholder="Contraseña">
+  <div class="add-contact">
+    <input id="newContact" placeholder="Agregar correo">
+    <button onclick="addContact()">Agregar</button>
+  </div>
 
-  <button onclick="loginEmail()">Entrar</button>
+  <div id="chatList"></div>
+
 </div>
 
 <!-- CHAT -->
-<div id="chatUI" class="container">
+<div class="chat-area">
 
-  <div class="topbar">
-    <span>NexChat Pro</span>
-    <button onclick="logout()">Salir</button>
-  </div>
+  <div class="topbar" id="chatTitle">Selecciona un chat</div>
 
-  <div id="contacts"></div>
+  <div id="messages" class="messages"></div>
 
-  <div id="messages"></div>
-
-  <div style="display:flex; gap:5px; padding:10px;">
-    <input id="mensaje" placeholder="Mensaje" style="flex:1;">
-    <input type="file" id="file">
-    <button onclick="enviar()">Enviar</button>
-    <button onclick="enviarArchivo()">📎</button>
+  <div class="input">
+    <input id="msg" placeholder="Mensaje">
+    <button onclick="sendMsg()">Enviar</button>
   </div>
 
 </div>
@@ -131,144 +134,98 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import {
   getFirestore,
   collection,
   addDoc,
   onSnapshot,
   query,
-  orderBy,
-  deleteDoc,
-  doc,
-  updateDoc,
-  setDoc
+  where,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  onAuthStateChanged,
-  signOut,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
-// 🔥 TU CONFIG
 const firebaseConfig = {
-  apiKey: "AIzaSyCJxRJfJ2fWZPKaBeOVS7BFOWeDM_WH6MU",
-  authDomain: "nexchat-382ba.firebaseapp.com",
-  databaseURL: "https://nexchat-382ba-default-rtdb.firebaseio.com",
-  projectId: "nexchat-382ba",
-  storageBucket: "nexchat-382ba.firebasestorage.app",
-  messagingSenderId: "217334097339",
-  appId: "1:217334097339:web:87f002c08a522c9abd509e",
-  measurementId: "G-Y2WLJPE5RV"
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH",
+  projectId: "TU_PROJECT"
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 const auth = getAuth(app);
-const storage = getStorage(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-let editId = null;
+let currentChat = null;
 
-// 🔔 NOTIFICACIONES
-if ("Notification" in window) {
-  Notification.requestPermission();
-}
-
-// LOGIN
-window.loginGoogle = () => signInWithPopup(auth, provider);
-
-window.loginEmail = async () => {
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("password").value;
-
-  try {
-    await createUserWithEmailAndPassword(auth, email, pass);
-  } catch {
-    await signInWithEmailAndPassword(auth, email, pass);
+// ================= LOGIN AUTO =================
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    signInWithPopup(auth, provider);
+  } else {
+    loadChats();
   }
-};
-
-window.logout = () => signOut(auth);
-
-// USUARIO
-onAuthStateChanged(auth, async (user) => {
-  document.getElementById("login").style.display = user ? "none" : "flex";
-  document.getElementById("chatUI").style.display = user ? "flex" : "none";
-
-  if (!user) return;
-
-  // guardar contacto
-  await setDoc(doc(db, "users", user.uid), {
-    uid: user.uid,
-    email: user.email,
-    lastSeen: Date.now()
-  });
-
-  loadContacts();
-  listenMessages();
 });
 
-// CONTACTOS
-function loadContacts() {
-  onSnapshot(collection(db, "users"), (snap) => {
-    const div = document.getElementById("contacts");
-    div.innerHTML = "<b>Contactos</b>";
+// ================= CONTACTOS =================
+window.addContact = async () => {
+  const email = document.getElementById("newContact").value;
+  const user = auth.currentUser;
 
-    snap.forEach(u => {
-      div.innerHTML += `<div class="contact">🟢 ${u.data().email}</div>`;
+  if (!email || !user) return;
+
+  await addDoc(collection(db, "chats"), {
+    users: [user.email, email]
+  });
+
+  document.getElementById("newContact").value = "";
+};
+
+// ================= LISTA CHATS =================
+function loadChats() {
+  const user = auth.currentUser;
+
+  onSnapshot(collection(db, "chats"), (snap) => {
+    const list = document.getElementById("chatList");
+    list.innerHTML = "";
+
+    snap.forEach(d => {
+      const chat = d.data();
+
+      if (!chat.users.includes(user.email)) return;
+
+      const other = chat.users.find(u => u !== user.email);
+
+      const div = document.createElement("div");
+      div.className = "chat-item";
+      div.textContent = other;
+
+      div.onclick = () => openChat(d.id, other);
+
+      list.appendChild(div);
     });
   });
 }
 
-// ENVIAR MENSAJE
-window.enviar = async () => {
-  const user = auth.currentUser;
-  const msg = document.getElementById("mensaje").value;
-  if (!user || !msg) return;
+// ================= ABRIR CHAT =================
+function openChat(chatId, name) {
+  currentChat = chatId;
+  document.getElementById("chatTitle").textContent = name;
+  listenMessages(chatId);
+}
 
-  await addDoc(collection(db, "mensajes"), {
-    mensaje: msg,
-    usuario: user.email,
-    uid: user.uid,
-    fecha: Date.now()
-  });
-
-  document.getElementById("mensaje").value = "";
-};
-
-// SUBIR ARCHIVO
-window.enviarArchivo = async () => {
-  const file = document.getElementById("file").files[0];
-  const user = auth.currentUser;
-
-  if (!file || !user) return;
-
-  const fileRef = ref(storage, "chat/" + Date.now() + file.name);
-  await uploadBytes(fileRef, file);
-  const url = await getDownloadURL(fileRef);
-
-  await addDoc(collection(db, "mensajes"), {
-    usuario: user.email,
-    uid: user.uid,
-    image: url,
-    fecha: Date.now()
-  });
-};
-
-// MENSAJES
-function listenMessages() {
-  const q = query(collection(db, "mensajes"), orderBy("fecha", "asc"));
+// ================= MENSAJES =================
+function listenMessages(chatId) {
+  const q = query(
+    collection(db, "messages"),
+    where("chatId", "==", chatId),
+    orderBy("timestamp", "asc")
+  );
 
   onSnapshot(q, (snap) => {
     const div = document.getElementById("messages");
@@ -276,35 +233,34 @@ function listenMessages() {
 
     snap.forEach(d => {
       const m = d.data();
-      const isMe = auth.currentUser?.uid === m.uid;
 
       const msg = document.createElement("div");
-      msg.className = "msg " + (isMe ? "me" : "");
-
-      msg.innerHTML = `
-        <b>${m.usuario}</b><br>
-        ${m.mensaje || ""}
-        ${m.image ? `<br><img src="${m.image}">` : ""}
-      `;
+      msg.className = "msg " + (m.sender === auth.currentUser.email ? "me" : "other");
+      msg.textContent = m.text;
 
       div.appendChild(msg);
-
-      // 🔔 NOTIFICACIÓN
-      if (document.hidden && m.uid !== auth.currentUser?.uid) {
-        new Notification("Nuevo mensaje", {
-          body: m.usuario
-        });
-      }
     });
 
     div.scrollTop = div.scrollHeight;
   });
 }
 
-// ENTER
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") enviar();
-});
+// ================= ENVIAR =================
+window.sendMsg = async () => {
+  const text = document.getElementById("msg").value;
+  const user = auth.currentUser;
+
+  if (!text || !currentChat) return;
+
+  await addDoc(collection(db, "messages"), {
+    chatId: currentChat,
+    text,
+    sender: user.email,
+    timestamp: Date.now()
+  });
+
+  document.getElementById("msg").value = "";
+};
 
 </script>
 
