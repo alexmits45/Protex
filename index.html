@@ -10,6 +10,7 @@
       background: #202123;
       margin: 0;
       font-family: Arial;
+      display: none; /* 👈 evita flash */
     }
 
     .container {
@@ -138,10 +139,7 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyCJxRJfJ2fWZPKaBeOVS7BFOWeDM_WH6MU",
   authDomain: "nexchat-382ba.firebaseapp.com",
-  projectId: "nexchat-382ba",
-  storageBucket: "nexchat-382ba.firebasestorage.app",
-  messagingSenderId: "217334097339",
-  appId: "1:217334097339:web:87f002c08a522c9abd509e"
+  projectId: "nexchat-382ba"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -152,36 +150,38 @@ const provider = new GoogleAuthProvider();
 const mensajesRef = collection(db, "mensajes");
 
 // LOGIN GOOGLE
-window.loginGoogle = async function () {
+window.loginGoogle = async () => {
   await signInWithPopup(auth, provider);
 };
 
 // LOGIN EMAIL
-window.loginEmail = async function () {
+window.loginEmail = async () => {
   const email = document.getElementById("email").value;
   const pass = document.getElementById("password").value;
 
   try {
     await createUserWithEmailAndPassword(auth, email, pass);
-  } catch (e) {
+  } catch {
     await signInWithEmailAndPassword(auth, email, pass);
   }
 };
 
 // LOGOUT
-window.logout = function () {
-  signOut(auth);
-};
+window.logout = () => signOut(auth);
 
-// ESTADO
+// ESTADO (SIN FLASH)
 onAuthStateChanged(auth, (user) => {
-  document.getElementById("login").style.display = user ? "none" : "block";
-  document.getElementById("chatUI").style.display = user ? "block" : "none";
+  console.log("Usuario:", user);
+
+  document.body.style.display = "block";
+
+  login.style.display = user ? "none" : "block";
+  chatUI.style.display = user ? "block" : "none";
 });
 
 // ENVIAR
-window.enviar = async function () {
-  const mensaje = document.getElementById("mensaje").value;
+window.enviar = async () => {
+  const mensaje = mensajeInput.value;
   const user = auth.currentUser;
 
   if (!mensaje || !user) return;
@@ -192,13 +192,20 @@ window.enviar = async function () {
     fecha: Date.now()
   });
 
-  document.getElementById("mensaje").value = "";
+  mensajeInput.value = "";
 };
 
-// 🔥 TIEMPO REAL (SIN RECARGAR)
+// TIEMPO REAL
 onSnapshot(mensajesRef, (snapshot) => {
+  console.log("Mensajes:", snapshot.size);
+
   const chat = document.getElementById("chat");
   chat.innerHTML = "";
+
+  if (snapshot.empty) {
+    chat.innerHTML = "<p style='color:white'>No hay mensajes aún 👀</p>";
+    return;
+  }
 
   snapshot.forEach((doc) => {
     const data = doc.data();
