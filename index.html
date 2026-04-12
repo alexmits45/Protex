@@ -2,69 +2,23 @@
 <html>
 <head>
   <title>NexChat Pro</title>
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
-      background: #202123;
       margin: 0;
       font-family: Arial;
-      display: none; /* 👈 evita flash */
+      background: #202123;
+      color: white;
     }
 
     .container {
-      width: 100%;
       height: 100vh;
-      background-color: #343541;
       display: flex;
       flex-direction: column;
     }
 
-    .messages-area {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
-    }
-
-    .msg {
-      background-color: #2E2F3A;
-      color: white;
-      padding: 8px;
-      margin: 5px 0;
-      border-radius: 8px;
-      font-size: 14px;
-      max-width: 80%;
-    }
-
-    .input-place {
-      display: flex;
-      padding: 10px;
-      background: #343541;
-      position: sticky;
-      bottom: 0;
-    }
-
-    .send-input {
-      flex: 1;
-      border: none;
-      background: #40414F;
-      color: white;
-      padding: 10px;
-      border-radius: 8px;
-      outline: none;
-    }
-
-    .send {
-      background-color: #19c37d;
-      border: none;
-      color: white;
-      border-radius: 8px;
-      padding: 10px;
-      margin-left: 5px;
-      cursor: pointer;
-    }
-
+    /* LOGIN */
     .login-box {
       display: flex;
       flex-direction: column;
@@ -72,23 +26,98 @@
       padding: 20px;
     }
 
-    .login-btn {
-      padding: 12px;
+    input {
+      padding: 10px;
+      border-radius: 8px;
       border: none;
+      background: #40414F;
+      color: white;
+    }
+
+    .btn {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
       background: #19c37d;
       color: white;
-      cursor: pointer;
-      border-radius: 8px;
     }
 
     .logout {
       background: red;
-      color: white;
-      border: none;
       padding: 8px;
-      cursor: pointer;
+      border: none;
       border-radius: 8px;
       margin: 5px;
+      cursor: pointer;
+    }
+
+    /* CHAT */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: #2b2c33;
+    }
+
+    select {
+      background: #40414F;
+      color: white;
+      border: none;
+      padding: 5px;
+      border-radius: 6px;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .msg {
+      padding: 8px;
+      border-radius: 10px;
+      max-width: 70%;
+      font-size: 14px;
+      position: relative;
+    }
+
+    .me {
+      background: #19c37d;
+      align-self: flex-end;
+    }
+
+    .other {
+      background: #2E2F3A;
+      align-self: flex-start;
+    }
+
+    .meta {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+    .actions {
+      font-size: 10px;
+      margin-top: 4px;
+      display: flex;
+      gap: 5px;
+      cursor: pointer;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 10px;
+      background: #2b2c33;
+      gap: 5px;
+    }
+
+    .input-area input {
+      flex: 1;
     }
   </style>
 </head>
@@ -97,68 +126,86 @@
 
 <!-- LOGIN -->
 <div id="login" class="login-box">
-  <button class="login-btn" onclick="loginGoogle()">Google</button>
+  <button class="btn" onclick="loginGoogle()">Google</button>
 
   <input id="email" placeholder="Correo">
   <input id="password" type="password" placeholder="Contraseña">
 
-  <button class="login-btn" onclick="loginEmail()">Entrar / Registrarse</button>
+  <button class="btn" onclick="loginEmail()">Entrar</button>
 </div>
 
 <!-- CHAT -->
-<div id="chatUI" style="display:none;">
-  <div class="container">
+<div id="chatUI" style="display:none;" class="container">
 
-    <button class="logout" onclick="logout()">Cerrar sesión</button>
+  <div class="topbar">
+    <button class="logout" onclick="logout()">Salir</button>
 
-    <div id="chat" class="messages-area"></div>
+    <select id="room" onchange="cambiarSala()">
+      <option value="general">General</option>
+      <option value="gaming">Gaming</option>
+      <option value="random">Random</option>
+    </select>
+  </div>
 
-    <div class="input-place">
-      <input id="mensaje" placeholder="Mensaje" class="send-input">
-      <button class="send" onclick="enviar()">Enviar</button>
-    </div>
+  <div id="messages" class="messages"></div>
 
+  <div class="input-area">
+    <input id="mensaje" placeholder="Mensaje">
+    <button class="btn" onclick="enviar()">Enviar</button>
   </div>
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
-import { 
-  getAuth, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  deleteDoc,
+  doc,
+  updateDoc,
+  onSnapshot,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
   onAuthStateChanged,
   signOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCJxRJfJ2fWZPKaBeOVS7BFOWeDM_WH6MU",
-  authDomain: "nexchat-382ba.firebaseapp.com",
-  projectId: "nexchat-382ba"
-};
+const app = initializeApp({
+  apiKey: "TU_KEY",
+  authDomain: "TU_DOMAIN",
+  projectId: "TU_PROJECT"
+});
 
-const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-
 const provider = new GoogleAuthProvider();
-const mensajesRef = collection(db, "mensajes");
 
-// LOGIN GOOGLE
-window.loginGoogle = async () => {
-  await signInWithPopup(auth, provider);
-};
+const msgInput = document.getElementById("mensaje");
+const loginBox = document.getElementById("login");
+const chatUI = document.getElementById("chatUI");
+const messagesDiv = document.getElementById("messages");
 
-// LOGIN EMAIL
+let room = "general";
+let editId = null;
+
+// LOGIN
+window.loginGoogle = () => signInWithPopup(auth, provider);
+
 window.loginEmail = async () => {
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("password").value;
-
+  const email = email.value;
+  const pass = password.value;
   try {
     await createUserWithEmailAndPassword(auth, email, pass);
   } catch {
@@ -166,62 +213,98 @@ window.loginEmail = async () => {
   }
 };
 
-// LOGOUT
 window.logout = () => signOut(auth);
 
-// ESTADO (SIN FLASH)
-onAuthStateChanged(auth, (user) => {
-  console.log("Usuario:", user);
-
-  document.body.style.display = "block";
-
-  login.style.display = user ? "none" : "block";
-  chatUI.style.display = user ? "block" : "none";
-});
-
-// ENVIAR
-window.enviar = async () => {
-  const mensaje = mensajeInput.value;
-  const user = auth.currentUser;
-
-  if (!mensaje || !user) return;
-
-  await addDoc(mensajesRef, {
-    usuario: user.displayName || user.email,
-    mensaje,
-    fecha: Date.now()
-  });
-
-  mensajeInput.value = "";
+// ROOMS
+window.cambiarSala = () => {
+  room = document.getElementById("room").value;
+  listenMessages();
 };
 
-// TIEMPO REAL
-onSnapshot(mensajesRef, (snapshot) => {
-  console.log("Mensajes:", snapshot.size);
+// AUTH UI
+onAuthStateChanged(auth, (user) => {
+  loginBox.style.display = user ? "none" : "flex";
+  chatUI.style.display = user ? "flex" : "none";
+  listenMessages();
+});
 
-  const chat = document.getElementById("chat");
-  chat.innerHTML = "";
+// SEND / EDIT
+window.enviar = async () => {
+  const user = auth.currentUser;
+  if (!user || !msgInput.value) return;
 
-  if (snapshot.empty) {
-    chat.innerHTML = "<p style='color:white'>No hay mensajes aún 👀</p>";
+  if (editId) {
+    await updateDoc(doc(db, "mensajes", editId), {
+      mensaje: msgInput.value
+    });
+    editId = null;
+    msgInput.value = "";
     return;
   }
 
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-
-    const div = document.createElement("div");
-    div.classList.add("msg");
-    div.textContent = data.usuario + ": " + data.mensaje;
-
-    chat.appendChild(div);
+  await addDoc(collection(db, "mensajes"), {
+    mensaje: msgInput.value,
+    usuario: user.email,
+    uid: user.uid,
+    room,
+    fecha: Date.now()
   });
 
-  chat.scrollTop = chat.scrollHeight;
-});
+  msgInput.value = "";
+};
+
+// DELETE + EDIT
+window.borrar = async (id) => {
+  await deleteDoc(doc(db, "mensajes", id));
+};
+
+window.editar = (id, texto) => {
+  msgInput.value = texto;
+  editId = id;
+};
+
+// LISTEN
+function listenMessages() {
+  const q = query(
+    collection(db, "mensajes"),
+    orderBy("fecha", "asc")
+  );
+
+  onSnapshot(q, (snap) => {
+    messagesDiv.innerHTML = "";
+
+    snap.forEach((d) => {
+      const m = d.data();
+
+      if (m.room !== room) return;
+
+      const isMe = auth.currentUser?.uid === m.uid;
+
+      const div = document.createElement("div");
+      div.className = "msg " + (isMe ? "me" : "other");
+
+      div.innerHTML = `
+        <div><b>${m.usuario}</b></div>
+        <div>${m.mensaje}</div>
+
+        <div class="meta">${new Date(m.fecha).toLocaleTimeString()}</div>
+
+        ${isMe ? `
+        <div class="actions">
+          <span onclick="editar('${d.id}','${m.mensaje}')">✏️ Editar</span>
+          <span onclick="borrar('${d.id}')">🗑️ Borrar</span>
+        </div>` : ""}
+      `;
+
+      messagesDiv.appendChild(div);
+    });
+
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  });
+}
 
 // ENTER
-document.addEventListener("keypress", (e) => {
+document.addEventListener("keydown", (e) => {
   if (e.key === "Enter") enviar();
 });
 </script>
