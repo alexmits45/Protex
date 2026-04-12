@@ -1,18 +1,63 @@
------BEGIN CERTIFICATE-----
-MIIC0TCCAbmgAwIBAgIGAZ2AXgNVMA0GCSqGSIb3DQEBCwUAMB8xHTAbBgNVBAMMFEhUVFAgRmls
-ZSBTZXJ2ZXIgQzZGMB4XDTI2MDQxMTA2MjUzOFoXDTMxMDMxNzA2MjUzOFowHzEdMBsGA1UEAwwU
-SFRUUCBGaWxlIFNlcnZlciBDNkYwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDBvUhd
-leeow8firrIg+LQsWxYIws/qWF5FlN0gER81ryMojR4oAOxqAYgaQA8vVTafsCTNUKXw2NJRJTmh
-Sq+bWwkhe1rPV6YkWdxLv9LO6r8CasGLv9qsBz21JRI32fCNwWuk5+iE5u5EpAy2rvYSYrYxyQm+
-Qh0YZBwa9KeE1WA8DX9kX1DPpQxyPhK3HslMsE4oH9CRNn4jkJpX0z7Vmxn6wfgxqwwJuU87jtzT
-B0vM1MUAsYSGzV6dwEOP54efZ98PUgs4lV4YWpWFweC+iYIAteEuJLN3E/GypA9DRtsrQgfAZ+8v
-TSGxcbb6Mc1u9ntEF3IWT1Vr5IQY/TD7AgMBAAGjEzARMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
-hvcNAQELBQADggEBACUtF6576U7MF4tHqGopOFoqW7RO+87tQft1KhjoL/WDe1UF7YuwawLn3p/E
-H/SbF85yAgoWL78Ljxs3i7SulsCsdROXv6XqeBk6y5HexLrSMgLNiDT486vUyGiKMSrKn7iU0cek
-k9lbp4cMWulh4zvAxtzacxlzdyNKJDFH28Fd4zsyAZvFbyU3o/fZzwzZa6Gig1gGDHCmBmp8m5QA
-pZVlilcs/3hHhyLw7TX8DyM3qhG88CayBKkGSU2hFtw4oLo6lg7NXX+kq3v77AhbB7GpluzCKnEA
-mAcoMT3XzPUXunIC5r5+7MCcQ2mPMtUiJEn4Aj1xnU8akSxRInnm/Oo=
------END CERTIFICATE-----r;
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NexChat Pro</title>
+
+  <style>
+    body {
+      background: #202123;
+      display: flex;
+      justify-content: center;
+      margin-top: 50px;
+      font-family: Arial;
+    }
+
+    .container {
+      width: 320px;
+      height: 450px;
+      background-color: #343541;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+    }
+
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .msg {
+      background-color: #2E2F3A;
+      color: white;
+      padding: 6px;
+      margin: 5px 0;
+      border-radius: 5px;
+      font-size: 13px;
+    }
+
+    .input-place {
+      display: flex;
+      gap: 5px;
+    }
+
+    .send-input {
+      flex: 1;
+      border: none;
+      background: #40414F;
+      color: white;
+      padding: 6px;
+      border-radius: 5px;
+      outline: none;
+    }
+
+    .send {
+      background-color: #19c37d;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      padding: 6px 10px;
+      cursor: pointer;
     }
 
     .login-box {
@@ -45,8 +90,9 @@ mAcoMT3XzPUXunIC5r5+7MCcQ2mPMtUiJEn4Aj1xnU8akSxRInnm/Oo=
 
 <body>
 
+<!-- LOGIN -->
 <div id="login" class="login-box">
-  <button class="login-btn" onclick="login()">Google</button>
+  <button class="login-btn" onclick="loginGoogle()">Google</button>
 
   <input id="email" placeholder="Correo">
   <input id="password" type="password" placeholder="Contraseña">
@@ -54,6 +100,7 @@ mAcoMT3XzPUXunIC5r5+7MCcQ2mPMtUiJEn4Aj1xnU8akSxRInnm/Oo=
   <button class="login-btn" onclick="loginEmail()">Entrar / Registrarse</button>
 </div>
 
+<!-- CHAT -->
 <div id="chatUI" style="display:none;">
   <div class="container">
 
@@ -84,6 +131,7 @@ import {
   signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+// 🔥 TU CONFIG REAL
 const firebaseConfig = {
   apiKey: "AIzaSyCJxRJfJ2fWZPKaBeOVS7BFOWeDM_WH6MU",
   authDomain: "nexchat-382ba.firebaseapp.com",
@@ -100,8 +148,8 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 const mensajesRef = collection(db, "mensajes");
 
-// GOOGLE
-window.login = async function () {
+// LOGIN GOOGLE
+window.loginGoogle = async function () {
   try {
     await signInWithPopup(auth, provider);
   } catch (error) {
@@ -109,18 +157,28 @@ window.login = async function () {
   }
 };
 
-// EMAIL
+// LOGIN EMAIL
 window.loginEmail = async function () {
   const email = document.getElementById("email").value;
   const pass = document.getElementById("password").value;
 
+  if (!email || !pass) {
+    alert("Completa los campos");
+    return;
+  }
+
   try {
     await createUserWithEmailAndPassword(auth, email, pass);
+    alert("Cuenta creada 🔥");
   } catch (e) {
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-    } catch (err) {
-      alert(err.message);
+    if (e.code === "auth/email-already-in-use") {
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch (err) {
+        alert("Contraseña incorrecta");
+      }
+    } else {
+      alert(e.message);
     }
   }
 };
@@ -130,7 +188,7 @@ window.logout = function () {
   signOut(auth);
 };
 
-// ESTADO
+// DETECTAR USUARIO
 onAuthStateChanged(auth, (user) => {
   if (user) {
     document.getElementById("login").style.display = "none";
@@ -141,7 +199,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// ENVIAR
+// ENVIAR MENSAJE
 window.enviar = async function () {
   const mensaje = document.getElementById("mensaje").value;
   const user = auth.currentUser;
@@ -158,7 +216,7 @@ window.enviar = async function () {
   document.getElementById("mensaje").value = "";
 };
 
-// CHAT EN VIVO
+// CHAT EN TIEMPO REAL
 const q = query(mensajesRef, orderBy("fecha"));
 
 onSnapshot(q, (snapshot) => {
@@ -178,7 +236,7 @@ onSnapshot(q, (snapshot) => {
   chat.scrollTop = chat.scrollHeight;
 });
 
-// ENTER
+// ENTER PARA ENVIAR
 document.addEventListener("keypress", (e) => {
   if (e.key === "Enter") enviar();
 });
