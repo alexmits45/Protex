@@ -18,7 +18,6 @@
       flex-direction: column;
     }
 
-    /* LOGIN */
     .login-box {
       display: flex;
       flex-direction: column;
@@ -26,7 +25,7 @@
       padding: 20px;
     }
 
-    input {
+    input, select {
       padding: 10px;
       border-radius: 8px;
       border: none;
@@ -52,7 +51,6 @@
       cursor: pointer;
     }
 
-    /* CHAT */
     .topbar {
       display: flex;
       justify-content: space-between;
@@ -61,12 +59,15 @@
       background: #2b2c33;
     }
 
-    select {
-      background: #40414F;
-      color: white;
-      border: none;
+    #contacts {
+      background: #2b2c33;
+      padding: 10px;
+      font-size: 12px;
+    }
+
+    .contact {
       padding: 5px;
-      border-radius: 6px;
+      border-bottom: 1px solid #444;
     }
 
     .messages {
@@ -83,7 +84,6 @@
       border-radius: 10px;
       max-width: 70%;
       font-size: 14px;
-      position: relative;
     }
 
     .me {
@@ -104,20 +104,20 @@
     .actions {
       font-size: 10px;
       margin-top: 4px;
-      display: flex;
-      gap: 5px;
       cursor: pointer;
     }
 
     .input-area {
       display: flex;
+      gap: 5px;
       padding: 10px;
       background: #2b2c33;
-      gap: 5px;
     }
 
-    .input-area input {
-      flex: 1;
+    img {
+      max-width: 200px;
+      border-radius: 10px;
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -147,19 +147,20 @@
     </select>
   </div>
 
+  <div id="contacts"></div>
+
   <div id="messages" class="messages"></div>
 
   <div class="input-area">
     <input id="mensaje" placeholder="Mensaje">
+    <input type="file" id="file">
     <button class="btn" onclick="enviar()">Enviar</button>
+    <button class="btn" onclick="enviarArchivo()">📎</button>
   </div>
 </div>
 
 <script type="module">
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
   getFirestore,
   collection,
@@ -169,7 +170,8 @@ import {
   updateDoc,
   onSnapshot,
   query,
-  orderBy
+  orderBy,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import {
@@ -182,30 +184,43 @@ import {
   signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
 const app = initializeApp({
-  apiKey: "TU_KEY",
-  authDomain: "TU_DOMAIN",
-  projectId: "TU_PROJECT"
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH",
+  projectId: "TU_PROJECT",
+  storageBucket: "TU_BUCKET"
 });
 
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
-
-const msgInput = document.getElementById("mensaje");
-const loginBox = document.getElementById("login");
-const chatUI = document.getElementById("chatUI");
-const messagesDiv = document.getElementById("messages");
 
 let room = "general";
 let editId = null;
 
-// LOGIN
+const msgInput = document.getElementById("mensaje");
+
+// 🔔 NOTIFICACIONES
+if ("Notification" in window) {
+  Notification.requestPermission();
+}
+
+// LOGIN GOOGLE
 window.loginGoogle = () => signInWithPopup(auth, provider);
 
+// LOGIN EMAIL
 window.loginEmail = async () => {
-  const email = email.value;
-  const pass = password.value;
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("password").value;
+
   try {
     await createUserWithEmailAndPassword(auth, email, pass);
   } catch {
@@ -215,32 +230,34 @@ window.loginEmail = async () => {
 
 window.logout = () => signOut(auth);
 
-// ROOMS
+// SALAS
 window.cambiarSala = () => {
   room = document.getElementById("room").value;
   listenMessages();
 };
 
-// AUTH UI
-onAuthStateChanged(auth, (user) => {
-  loginBox.style.display = user ? "none" : "flex";
-  chatUI.style.display = user ? "flex" : "none";
+// USUARIO LOGUEADO
+onAuthStateChanged(auth, async (user) => {
+  document.getElementById("login").style.display = user ? "none" : "flex";
+  document.getElementById("chatUI").style.display = user ? "flex" : "none";
+
+  if (!user) return;
+
+  // guardar usuario (contactos)
+  await setDoc(doc(db, "users", user.uid), {
+    uid: user.uid,
+    email: user.email,
+    lastSeen: Date.now()
+  });
+
+  loadContacts();
   listenMessages();
 });
 
-// SEND / EDIT
+// ENVIAR MENSAJE
 window.enviar = async () => {
   const user = auth.currentUser;
   if (!user || !msgInput.value) return;
-
-  if (editId) {
-    await updateDoc(doc(db, "mensajes", editId), {
-      mensaje: msgInput.value
-    });
-    editId = null;
-    msgInput.value = "";
-    return;
-  }
 
   await addDoc(collection(db, "mensajes"), {
     mensaje: msgInput.value,
@@ -253,7 +270,27 @@ window.enviar = async () => {
   msgInput.value = "";
 };
 
-// DELETE + EDIT
+// SUBIR ARCHIVO
+window.enviarArchivo = async () => {
+  const file = document.getElementById("file").files[0];
+  const user = auth.currentUser;
+  if (!file || !user) return;
+
+  const fileRef = ref(storage, "chat/" + Date.now() + file.name);
+
+  await uploadBytes(fileRef, file);
+  const url = await getDownloadURL(fileRef);
+
+  await addDoc(collection(db, "mensajes"), {
+    usuario: user.email,
+    uid: user.uid,
+    image: url,
+    room,
+    fecha: Date.now()
+  });
+};
+
+// BORRAR / EDITAR
 window.borrar = async (id) => {
   await deleteDoc(doc(db, "mensajes", id));
 };
@@ -263,43 +300,62 @@ window.editar = (id, texto) => {
   editId = id;
 };
 
-// LISTEN
+// CONTACTOS
+function loadContacts() {
+  onSnapshot(collection(db, "users"), (snap) => {
+    const div = document.getElementById("contacts");
+    div.innerHTML = "<b>Contactos</b>";
+
+    snap.forEach(u => {
+      div.innerHTML += `
+        <div class="contact">🟢 ${u.data().email}</div>
+      `;
+    });
+  });
+}
+
+// MENSAJES
 function listenMessages() {
-  const q = query(
-    collection(db, "mensajes"),
-    orderBy("fecha", "asc")
-  );
+  const q = query(collection(db, "mensajes"), orderBy("fecha", "asc"));
 
   onSnapshot(q, (snap) => {
-    messagesDiv.innerHTML = "";
+    const div = document.getElementById("messages");
+    div.innerHTML = "";
 
-    snap.forEach((d) => {
+    snap.forEach(d => {
       const m = d.data();
-
       if (m.room !== room) return;
 
       const isMe = auth.currentUser?.uid === m.uid;
 
-      const div = document.createElement("div");
-      div.className = "msg " + (isMe ? "me" : "other");
+      const msg = document.createElement("div");
+      msg.className = "msg " + (isMe ? "me" : "other");
 
-      div.innerHTML = `
-        <div><b>${m.usuario}</b></div>
-        <div>${m.mensaje}</div>
+      msg.innerHTML = `
+        <b>${m.usuario}</b><br>
+        ${m.mensaje || ""}
+        ${m.image ? `<br><img src="${m.image}">` : ""}
 
         <div class="meta">${new Date(m.fecha).toLocaleTimeString()}</div>
 
         ${isMe ? `
         <div class="actions">
-          <span onclick="editar('${d.id}','${m.mensaje}')">✏️ Editar</span>
-          <span onclick="borrar('${d.id}')">🗑️ Borrar</span>
+          <span onclick="editar('${d.id}','${m.mensaje || ""}')">✏️</span>
+          <span onclick="borrar('${d.id}')">🗑️</span>
         </div>` : ""}
       `;
 
-      messagesDiv.appendChild(div);
+      div.appendChild(msg);
+
+      // 🔔 NOTIFICACIÓN
+      if (document.hidden && m.uid !== auth.currentUser?.uid) {
+        new Notification("Nuevo mensaje", {
+          body: m.usuario + ": " + (m.mensaje || "📎 Archivo")
+        });
+      }
     });
 
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    div.scrollTop = div.scrollHeight;
   });
 }
 
