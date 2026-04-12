@@ -1,332 +1,188 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Inicio de Sesión</title>
-  <style>
-    /* Fondo cuadriculado */
-    .container {
-      width: 100%;
-      height: 100vh;
-      --color: rgba(114, 114, 114, 0.3);
-      background-color: #191a1a;
-      background-image: linear-gradient(0deg, transparent 24%, var(--color) 25%, var(--color) 26%, transparent 27%,transparent 74%, var(--color) 75%, var(--color) 76%, transparent 77%,transparent),
-          linear-gradient(90deg, transparent 24%, var(--color) 25%, var(--color) 26%, transparent 27%,transparent 74%, var(--color) 75%, var(--color) 76%, transparent 77%,transparent);
-      background-size: 55px 55px;
-
-      display: flex;
-      justify-content: center;
-      align-items: center;
+-----BEGIN CERTIFICATE-----
+MIIC0TCCAbmgAwIBAgIGAZ2AXgNVMA0GCSqGSIb3DQEBCwUAMB8xHTAbBgNVBAMMFEhUVFAgRmls
+ZSBTZXJ2ZXIgQzZGMB4XDTI2MDQxMTA2MjUzOFoXDTMxMDMxNzA2MjUzOFowHzEdMBsGA1UEAwwU
+SFRUUCBGaWxlIFNlcnZlciBDNkYwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDBvUhd
+leeow8firrIg+LQsWxYIws/qWF5FlN0gER81ryMojR4oAOxqAYgaQA8vVTafsCTNUKXw2NJRJTmh
+Sq+bWwkhe1rPV6YkWdxLv9LO6r8CasGLv9qsBz21JRI32fCNwWuk5+iE5u5EpAy2rvYSYrYxyQm+
+Qh0YZBwa9KeE1WA8DX9kX1DPpQxyPhK3HslMsE4oH9CRNn4jkJpX0z7Vmxn6wfgxqwwJuU87jtzT
+B0vM1MUAsYSGzV6dwEOP54efZ98PUgs4lV4YWpWFweC+iYIAteEuJLN3E/GypA9DRtsrQgfAZ+8v
+TSGxcbb6Mc1u9ntEF3IWT1Vr5IQY/TD7AgMBAAGjEzARMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
+hvcNAQELBQADggEBACUtF6576U7MF4tHqGopOFoqW7RO+87tQft1KhjoL/WDe1UF7YuwawLn3p/E
+H/SbF85yAgoWL78Ljxs3i7SulsCsdROXv6XqeBk6y5HexLrSMgLNiDT486vUyGiKMSrKn7iU0cek
+k9lbp4cMWulh4zvAxtzacxlzdyNKJDFH28Fd4zsyAZvFbyU3o/fZzwzZa6Gig1gGDHCmBmp8m5QA
+pZVlilcs/3hHhyLw7TX8DyM3qhG88CayBKkGSU2hFtw4oLo6lg7NXX+kq3v77AhbB7GpluzCKnEA
+mAcoMT3XzPUXunIC5r5+7MCcQ2mPMtUiJEn4Aj1xnU8akSxRInnm/Oo=
+-----END CERTIFICATE-----r;
     }
 
-    /* Caja del formulario */
-    .form_area {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      background-color: #EDDCD9;
-      border: 2px solid #264143;
-      border-radius: 20px;
-      box-shadow: 3px 4px 0px 1px #E99F4C;
-      padding: 20px;
-      text-align: center;
-    }
-
-    .title {
-      color: #264143;
-      font-weight: 900;
-      font-size: 1.5em;
-      margin-top: 10px;
-    }
-
-    .sub_title {
-      font-weight: 600;
-      margin: 5px 0;
-    }
-
-    .form_group {
+    .login-box {
       display: flex;
       flex-direction: column;
-      align-items: baseline;
-      margin: 10px;
+      gap: 10px;
+      width: 300px;
     }
 
-    .form_style {
-      outline: none;
-      border: 2px solid #264143;
-      box-shadow: 3px 4px 0px 1px #E99F4C;
-      width: 290px;
-      padding: 12px 10px;
-      border-radius: 4px;
-      font-size: 15px;
-    }
-
-    .form_style:focus, .btn:focus {
-      transform: translateY(4px);
-      box-shadow: 1px 2px 0px 0px #E99F4C;
-    }
-
-    .btn {
-      padding: 15px;
-      margin: 25px 0px;
-      width: 290px;
-      font-size: 15px;
-      background: #DE5499;
-      border-radius: 10px;
-      font-weight: 800;
-      box-shadow: 3px 3px 0px 0px #E99F4C;
+    .login-btn {
+      padding: 10px;
       border: none;
+      background: #19c37d;
+      color: white;
       cursor: pointer;
+      border-radius: 5px;
     }
 
-    .btn:hover {
-      opacity: .9;
+    .logout {
+      margin-bottom: 5px;
+      background: red;
+      color: white;
+      border: none;
+      padding: 5px;
+      cursor: pointer;
+      border-radius: 5px;
     }
-
-@media (max-width: 600px) {
-  .container {
-    padding: 10px;
-    background-size: 35px 35px;  /* ajusta cuadriculado */
-    flex-direction: column;
-
-    /* IMPORTANTE: mantener fondo cuadriculado */
-    background-color: #191a1a;
-    background-image: linear-gradient(0deg, transparent 24%, rgba(114, 114, 114, 0.3) 25%, rgba(114, 114, 114, 0.3) 26%, transparent 27%,transparent 74%, rgba(114, 114, 114, 0.3) 75%, rgba(114, 114, 114, 0.3) 76%, transparent 77%,transparent),
-                      linear-gradient(90deg, transparent 24%, rgba(114, 114, 114, 0.3) 25%, rgba(114, 114, 114, 0.3) 26%, transparent 27%,transparent 74%, rgba(114, 114, 114, 0.3) 75%, rgba(114, 114, 114, 0.3) 76%, transparent 77%,transparent);
-  }
-}
-}
   </style>
 </head>
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-<script>
-  (function(){
-    emailjs.init("4S8oKnuDcpg5Pnv0b");
-  })();
-</script>
+
 <body>
-    
-    <!-- Panel de login -->
-    <div id="panelLogin" class="form_area">
-      <p class="title">LOGIN</p>
-      <form id="formLogin">
-        <div class="form_group">
-          <label class="sub_title" for="loginCorreo">Email</label>
-          <input placeholder="Correo electrónico" id="loginCorreo" class="form_style" type="email" required>
-        </div>
-        <div class="form_group">
-          <label class="sub_title" for="loginClave">Password</label>
-          <input placeholder="Contraseña" id="loginClave" class="form_style" type="password" required>
-        </div>
-        <button type="submit" class="btn">Iniciar Sesión</button>
-      </form>
-      <p>¿No tienes cuenta? <span class="link" onclick="mostrarRegistro()">Regístrate aquí</span></p>
-    </div>
 
-    <!-- Panel de registro -->
-    <div id="panelRegistro" class="form_area" style="display:none;">
-      <p class="title">SIGN UP</p>
-      <form id="formRegistro">
-        <div class="form_group">
-          <label class="sub_title" for="nombre">Nombre completo</label>
-          <input placeholder="Ingresa tu nombre" id="nombre" class="form_style" type="text" required>
-        </div>
-        <div class="form_group">
-          <label class="sub_title" for="correo">Email</label>
-          <input placeholder="Ingresa tu correo" id="correo" class="form_style" type="email" required>
-        </div>
-        <div class="form_group">
-          <label class="sub_title" for="clave">Password</label>
-          <input placeholder="Contraseña (no la del correo)" id="clave" class="form_style" type="password" required>
-        </div>
-        <button type="submit" class="btn">Registrarse</button>
-      </form>
-      <p>¿Ya tienes cuenta? <span class="link" onclick="mostrarLogin()">Inicia sesión aquí</span></p>
-    </div>
+<div id="login" class="login-box">
+  <button class="login-btn" onclick="login()">Google</button>
 
-    <!-- Panel de usuario -->
-    <!-- Panel de usuario -->
-<div id="panelUsuario" class="form_area" style="display:none;">
-  <p id="info"></p>
-  <p id="saldo"></p>
-  <p id="aviso"></p>
+  <input id="email" placeholder="Correo">
+  <input id="password" type="password" placeholder="Contraseña">
 
-  <button id="pagoEconomico" class="btn">Paquete $50</button>
-  <button id="pagoPremium" class="btn">Paquete $150</button>
-
-  <button id="cerrarSesion" class="btn">Cerrar Sesión</button>
+  <button class="login-btn" onclick="loginEmail()">Entrar / Registrarse</button>
 </div>
-    </div>
-  </div>
 
-  <script type="module">
+<div id="chatUI" style="display:none;">
+  <div class="container">
+
+    <button class="logout" onclick="logout()">Cerrar sesión</button>
+
+    <div id="chat" class="messages-area"></div>
+
+    <div class="input-place">
+      <input id="mensaje" placeholder="Mensaje" class="send-input">
+      <button class="send" onclick="enviar()">Enviar</button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import { 
+  getAuth, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  onAuthStateChanged,
+  signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA1ZN3FisKZoRoJY4XInerpgUjjqv0d-8I",
-  authDomain: "protex-93fae.firebaseapp.com",
-  projectId: "protex-93fae",
-  storageBucket: "protex-93fae.firebasestorage.app",
-  messagingSenderId: "111543961960",
-  appId: "1:111543961960:web:27e19f920f08a7126e6edd"
+  apiKey: "AIzaSyCJxRJfJ2fWZPKaBeOVS7BFOWeDM_WH6MU",
+  authDomain: "nexchat-382ba.firebaseapp.com",
+  projectId: "nexchat-382ba",
+  storageBucket: "nexchat-382ba.firebasestorage.app",
+  messagingSenderId: "217334097339",
+  appId: "1:217334097339:web:87f002c08a522c9abd509e"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-// --- REGISTRO ---
-document.getElementById("formRegistro").addEventListener("submit", async (e) => {
-  e.preventDefault();
+const provider = new GoogleAuthProvider();
+const mensajesRef = collection(db, "mensajes");
 
-  const nombre = document.getElementById("nombre").value;
-  const correo = document.getElementById("correo").value;
-  const clave = document.getElementById("clave").value;
-
-  if (!nombre || !correo || !clave) return alert("Completa todos los campos");
-
-  const ref = doc(db, "usuarios", correo);
-  const snap = await getDoc(ref);
-
-  if (snap.exists()) return alert("Ese correo ya está registrado");
-
-  await setDoc(ref, {
-    nombre,
-    correo,
-    clave,
-    codigo: "COD-" + Math.random().toString(36).substr(2, 8).toUpperCase(),
-    saldo: 0
-  });
-
-  alert("Usuario registrado correctamente. Ahora inicia sesión.");
-  mostrarLogin();
-});
-
-// --- LOGIN ---
-document.getElementById("formLogin").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const correo = document.getElementById("loginCorreo").value;
-  const clave = document.getElementById("loginClave").value;
-
-  const ref = doc(db, "usuarios", correo);
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) return alert("Usuario no existe");
-
-  const data = snap.data();
-  if (data.clave !== clave) return alert("Contraseña incorrecta");
-  
-  localStorage.setItem("correoUsuario", correo);
-localStorage.setItem("nombreUsuario", data.nombre);
-localStorage.setItem("codigoUsuario", data.codigo);
-
-  // Mostrar panel de usuario
-  document.getElementById("panelLogin").style.display = "none";
-  document.getElementById("panelUsuario").style.display = "block";
-  document.getElementById("info").textContent = "Hola " + data.nombre;
-  document.getElementById("saldo").textContent = "Saldo: $" + data.saldo;
-});
-
-// --- AUTO LOGIN ---
-window.addEventListener("load", async () => {
-  const guardado = localStorage.getItem("correoUsuario");
-  if (!guardado) return;
-
-  const ref = doc(db, "usuarios", guardado);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return;
-
-  const data = snap.data();
-  document.getElementById("panelLogin").style.display = "none";
-  document.getElementById("panelUsuario").style.display = "block";
-  document.getElementById("info").textContent = "Hola " + data.nombre;
-  document.getElementById("saldo").textContent = "Saldo: $" + data.saldo;
-});
-// --- CERRAR SESIÓN ---
-document.getElementById("cerrarSesion").addEventListener("click", () => {
-  localStorage.removeItem("correoUsuario"); // Borra el usuario guardado
-  document.getElementById("panelUsuario").style.display = "none";
-  document.getElementById("panelLogin").style.display = "block";
-});
-
-// --- MOSTRAR REGISTRO ---
-window.mostrarRegistro = function () {
-  document.getElementById("panelLogin").style.display = "none";
-  document.getElementById("panelRegistro").style.display = "block";
-  document.getElementById("panelUsuario").style.display = "none";
+// GOOGLE
+window.login = async function () {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (error) {
+    alert(error.message);
+  }
 };
 
-// --- MOSTRAR LOGIN ---
-window.mostrarLogin = function () {
-  document.getElementById("panelRegistro").style.display = "none";
-  document.getElementById("panelLogin").style.display = "block";
-  document.getElementById("panelUsuario").style.display = "none";
-};
-// --- DETECTAR PAGO SIMULADO ---
-const params = new URLSearchParams(window.location.search);
-const success = params.get("success");
-const pack = params.get("pack");
+// EMAIL
+window.loginEmail = async function () {
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("password").value;
 
-if (success === "true" && pack) {
-  const correo = localStorage.getItem("correoUsuario");
-
-  if (correo) {
-    const ref = doc(db, "usuarios", correo);
-    const snap = await getDoc(ref);
-
-    if (snap.exists()) {
-      let saldoActual = snap.data().saldo;
-      let aumento = pack === "50" ? 50 : 150;
-
-      await setDoc(ref, {
-        ...snap.data(),
-        saldo: saldoActual + aumento
-      });
-
-      document.getElementById("saldo").textContent =
-        "Saldo: $" + (saldoActual + aumento);
-
-      alert("Pago exitoso. Se recargó tu saldo.");
-
-      // Limpia la URL
-      window.history.replaceState({}, document.title, window.location.pathname);
+  try {
+    await createUserWithEmailAndPassword(auth, email, pass);
+  } catch (e) {
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (err) {
+      alert(err.message);
     }
   }
-}
-document.addEventListener("DOMContentLoaded", () => {
+};
 
-  const btnEco = document.getElementById("pagoEconomico");
-  const btnPro = document.getElementById("pagoPremium");
+// LOGOUT
+window.logout = function () {
+  signOut(auth);
+};
 
-  if (btnEco) {
-    btnEco.addEventListener("click", () => {
-      window.location.href = window.location.pathname + "?success=true&pack=50";
-    });
+// ESTADO
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chatUI").style.display = "block";
+  } else {
+    document.getElementById("login").style.display = "block";
+    document.getElementById("chatUI").style.display = "none";
   }
+});
 
-  if (btnPro) {
-    btnPro.addEventListener("click", () => {
-      window.location.href = window.location.pathname + "?success=true&pack=150";
-    });
-  }
+// ENVIAR
+window.enviar = async function () {
+  const mensaje = document.getElementById("mensaje").value;
+  const user = auth.currentUser;
 
+  if (!mensaje || !user) return;
+
+  await addDoc(mensajesRef, {
+    usuario: user.displayName || user.email,
+    uid: user.uid,
+    mensaje,
+    fecha: Date.now()
+  });
+
+  document.getElementById("mensaje").value = "";
+};
+
+// CHAT EN VIVO
+const q = query(mensajesRef, orderBy("fecha"));
+
+onSnapshot(q, (snapshot) => {
+  const chat = document.getElementById("chat");
+  chat.innerHTML = "";
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+
+    const div = document.createElement("div");
+    div.classList.add("msg");
+    div.textContent = data.usuario + ": " + data.mensaje;
+
+    chat.appendChild(div);
+  });
+
+  chat.scrollTop = chat.scrollHeight;
+});
+
+// ENTER
+document.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") enviar();
 });
 </script>
-<script src="https://js.stripe.com/v3/"></script>
-<!-- Google AdSense: in-article fluido -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4006965729567771"
-        crossorigin="anonymous"></script>
 
-<!-- Bloque de anuncio autorelaxed -->
-<ins class="adsbygoogle"
-     style="display:block; text-align:center;"
-     data-ad-format="autorelaxed"
-     data-ad-client="ca-pub-4006965729567771"
-     data-ad-slot="6914358010"></ins>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({});
-</script>
 </body>
 </html>
