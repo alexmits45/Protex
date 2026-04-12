@@ -2,88 +2,106 @@
 <html>
 <head>
   <title>NexChat Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
-      background: #202123;
-      display: flex;
-      justify-content: center;
-      margin-top: 50px;
+      margin: 0;
       font-family: Arial;
+      background: #111;
     }
 
-    .container {
-      width: 320px;
-      height: 450px;
-      background-color: #343541;
-      border-radius: 10px;
+    .app {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* CONTACTOS */
+    .contacts {
+      width: 35%;
+      background: #1f2c34;
+      overflow-y: auto;
+    }
+
+    .contact {
+      padding: 12px;
+      color: white;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+    }
+
+    .contact:hover {
+      background: #2a3942;
+    }
+
+    /* CHAT */
+    .chat-container {
+      flex: 1;
       display: flex;
       flex-direction: column;
+      background: #0b141a;
+    }
+
+    .header {
+      background: #202c33;
+      color: white;
       padding: 10px;
     }
 
-    .messages-area {
+    .messages {
       flex: 1;
+      padding: 10px;
       overflow-y: auto;
     }
 
     .msg {
-      background-color: #2E2F3A;
-      color: white;
-      padding: 6px;
+      padding: 10px;
       margin: 5px 0;
-      border-radius: 5px;
-      font-size: 13px;
+      border-radius: 10px;
+      max-width: 70%;
     }
 
-    .input-place {
+    .yo {
+      background: #005c4b;
+      color: white;
+      margin-left: auto;
+    }
+
+    .otro {
+      background: #202c33;
+      color: white;
+    }
+
+    .input-area {
       display: flex;
-      gap: 5px;
+      padding: 10px;
+      background: #202c33;
     }
 
-    .send-input {
+    .input-area input {
       flex: 1;
+      padding: 10px;
+      border-radius: 20px;
       border: none;
-      background: #40414F;
+      background: #2a3942;
       color: white;
-      padding: 6px;
-      border-radius: 5px;
-      outline: none;
     }
 
-    .send {
-      background-color: #19c37d;
+    .input-area button {
+      margin-left: 5px;
+      padding: 10px 15px;
+      background: #00a884;
       border: none;
+      border-radius: 50%;
       color: white;
-      border-radius: 5px;
-      padding: 6px 10px;
       cursor: pointer;
     }
 
     .login-box {
+      padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      width: 300px;
-    }
-
-    .login-btn {
-      padding: 10px;
-      border: none;
-      background: #19c37d;
-      color: white;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-
-    .logout {
-      margin-bottom: 5px;
-      background: red;
-      color: white;
-      border: none;
-      padding: 5px;
-      cursor: pointer;
-      border-radius: 5px;
     }
   </style>
 </head>
@@ -92,33 +110,33 @@
 
 <!-- LOGIN -->
 <div id="login" class="login-box">
-  <button class="login-btn" onclick="loginGoogle()">Google</button>
-
+  <button onclick="loginGoogle()">Google</button>
   <input id="email" placeholder="Correo">
   <input id="password" type="password" placeholder="Contraseña">
-
-  <button class="login-btn" onclick="loginEmail()">Entrar / Registrarse</button>
+  <button onclick="loginEmail()">Entrar</button>
 </div>
 
-<!-- CHAT -->
-<div id="chatUI" style="display:none;">
-  <div class="container">
+<!-- APP -->
+<div id="app" class="app" style="display:none;">
 
-    <button class="logout" onclick="logout()">Cerrar sesión</button>
+  <div class="contacts" id="contactos"></div>
 
-    <div id="chat" class="messages-area"></div>
+  <div class="chat-container">
+    <div class="header" id="chatNombre">Selecciona un contacto</div>
 
-    <div class="input-place">
-      <input id="mensaje" placeholder="Mensaje" class="send-input">
-      <button class="send" onclick="enviar()">Enviar</button>
+    <div id="chat" class="messages"></div>
+
+    <div class="input-area">
+      <input id="mensaje" placeholder="Mensaje">
+      <button onclick="enviar()">➤</button>
     </div>
-
   </div>
+
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } 
+import { getFirestore, collection, addDoc, onSnapshot, getDocs, doc, setDoc, query } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { 
@@ -126,12 +144,10 @@ import {
   signInWithPopup, 
   GoogleAuthProvider, 
   onAuthStateChanged,
-  signOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// 🔥 TU CONFIG REAL
 const firebaseConfig = {
   apiKey: "AIzaSyCJxRJfJ2fWZPKaBeOVS7BFOWeDM_WH6MU",
   authDomain: "nexchat-382ba.firebaseapp.com",
@@ -146,99 +162,117 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 const provider = new GoogleAuthProvider();
+
 const mensajesRef = collection(db, "mensajes");
+const usersRef = collection(db, "users");
+
+let usuarioSeleccionado = null;
+let ultimoMensaje = null;
+
+// 🔔 PERMISO
+Notification.requestPermission();
 
 // LOGIN GOOGLE
-window.loginGoogle = async function () {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (error) {
-    alert(error.message);
-  }
+window.loginGoogle = async () => {
+  await signInWithPopup(auth, provider);
 };
 
 // LOGIN EMAIL
-window.loginEmail = async function () {
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("password").value;
-
-  if (!email || !pass) {
-    alert("Completa los campos");
-    return;
-  }
+window.loginEmail = async () => {
+  const email = emailInput.value;
+  const pass = password.value;
 
   try {
     await createUserWithEmailAndPassword(auth, email, pass);
-    alert("Cuenta creada 🔥");
-  } catch (e) {
-    if (e.code === "auth/email-already-in-use") {
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-      } catch (err) {
-        alert("Contraseña incorrecta");
-      }
-    } else {
-      alert(e.message);
-    }
+  } catch {
+    await signInWithEmailAndPassword(auth, email, pass);
   }
 };
 
-// LOGOUT
-window.logout = function () {
-  signOut(auth);
-};
-
-// DETECTAR USUARIO
-onAuthStateChanged(auth, (user) => {
+// ESTADO
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("chatUI").style.display = "block";
+    login.style.display = "none";
+    app.style.display = "flex";
+
+    await setDoc(doc(db, "users", user.uid), {
+      nombre: user.displayName || user.email
+    });
+
+    cargarUsuarios();
   } else {
-    document.getElementById("login").style.display = "block";
-    document.getElementById("chatUI").style.display = "none";
+    login.style.display = "block";
+    app.style.display = "none";
   }
 });
 
-// ENVIAR MENSAJE
-window.enviar = async function () {
-  const mensaje = document.getElementById("mensaje").value;
-  const user = auth.currentUser;
+// CONTACTOS
+async function cargarUsuarios() {
+  const snapshot = await getDocs(usersRef);
+  contactos.innerHTML = "";
 
-  if (!mensaje || !user) return;
+  snapshot.forEach((docu) => {
+    if (docu.id === auth.currentUser.uid) return;
+
+    const div = document.createElement("div");
+    div.className = "contact";
+    div.textContent = docu.data().nombre;
+
+    div.onclick = () => {
+      usuarioSeleccionado = docu.id;
+      chatNombre.textContent = docu.data().nombre;
+      chat.innerHTML = "";
+    };
+
+    contactos.appendChild(div);
+  });
+}
+
+// ENVIAR
+window.enviar = async () => {
+  if (!mensaje.value || !usuarioSeleccionado) return;
 
   await addDoc(mensajesRef, {
-    usuario: user.displayName || user.email,
-    uid: user.uid,
-    mensaje,
+    de: auth.currentUser.uid,
+    para: usuarioSeleccionado,
+    mensaje: mensaje.value,
     fecha: Date.now()
   });
 
-  document.getElementById("mensaje").value = "";
+  mensaje.value = "";
 };
 
-// CHAT EN TIEMPO REAL
-const q = query(mensajesRef, orderBy("fecha"));
+// MENSAJES + NOTIFICACIONES
+onSnapshot(query(mensajesRef), (snapshot) => {
+  snapshot.docChanges().forEach((change) => {
+    if (change.type === "added") {
+      const data = change.doc.data();
+      const yo = auth.currentUser.uid;
 
-onSnapshot(q, (snapshot) => {
-  const chat = document.getElementById("chat");
-  chat.innerHTML = "";
+      if (
+        (data.de === yo && data.para === usuarioSeleccionado) ||
+        (data.de === usuarioSeleccionado && data.para === yo)
+      ) {
+        const div = document.createElement("div");
+        div.classList.add("msg");
+        div.classList.add(data.de === yo ? "yo" : "otro");
+        div.textContent = data.mensaje;
 
-  snapshot.forEach((doc) => {
-    const data = doc.data();
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+      }
 
-    const div = document.createElement("div");
-    div.classList.add("msg");
-    div.textContent = data.usuario + ": " + data.mensaje;
-
-    chat.appendChild(div);
+      // 🔔 NOTIFICACIÓN
+      if (data.de !== yo && Notification.permission === "granted") {
+        if (ultimoMensaje !== data.mensaje) {
+          new Notification("Nuevo mensaje 💬", {
+            body: data.mensaje
+          });
+          ultimoMensaje = data.mensaje;
+        }
+      }
+    }
   });
-
-  chat.scrollTop = chat.scrollHeight;
-});
-
-// ENTER PARA ENVIAR
-document.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") enviar();
 });
 </script>
 
