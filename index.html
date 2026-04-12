@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>NexChat WhatsApp Pro</title>
+  <title>NexChat Pro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -14,7 +14,6 @@
       height: 100vh;
     }
 
-    /* SIDEBAR */
     .sidebar {
       width: 30%;
       background: #202c33;
@@ -22,7 +21,7 @@
       flex-direction: column;
     }
 
-    .top-sidebar {
+    .top {
       padding: 10px;
       display: flex;
       gap: 5px;
@@ -39,7 +38,6 @@
       background: #2a3942;
     }
 
-    /* CHAT */
     .chat-area {
       flex: 1;
       display: flex;
@@ -77,11 +75,11 @@
       align-self: flex-start;
     }
 
-    .input-area {
+    .input {
       display: flex;
       padding: 10px;
-      gap: 5px;
       background: #202c33;
+      gap: 5px;
     }
 
     input {
@@ -102,7 +100,6 @@
       cursor: pointer;
     }
 
-    /* MODAL */
     .modal {
       position: fixed;
       top: 0;
@@ -119,13 +116,6 @@
       background: #2b2c33;
       padding: 20px;
       border-radius: 10px;
-      width: 80%;
-    }
-
-    img {
-      max-width: 200px;
-      border-radius: 10px;
-      margin-top: 5px;
     }
   </style>
 </head>
@@ -135,7 +125,7 @@
 <!-- SIDEBAR -->
 <div class="sidebar">
 
-  <div class="top-sidebar">
+  <div class="top">
     <button onclick="openModal()">➕</button>
   </div>
 
@@ -149,12 +139,8 @@
 
   <div id="messages" class="messages"></div>
 
-  <div class="input-area">
+  <div class="input">
     <input id="msg" placeholder="Mensaje">
-    
-    <input type="file" id="file" style="display:none">
-    <button onclick="document.getElementById('file').click()">📎</button>
-
     <button onclick="sendMsg()">Enviar</button>
   </div>
 </div>
@@ -193,29 +179,20 @@ import {
   orderBy
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
-// 🔥 CONFIG
 const firebaseConfig = {
   apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH",
-  projectId: "TU_PROJECT"
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 let currentChat = null;
 
-// ================= LOGIN AUTO =================
+// 🔐 LOGIN AUTO
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     signInWithPopup(auth, provider);
@@ -233,12 +210,34 @@ window.closeModal = () => {
   document.getElementById("modal").style.display = "none";
 };
 
-// ================= AGREGAR CONTACTO =================
+// ================= AGREGAR CONTACTO (FIX REAL) =================
 window.addContact = async () => {
-  const email = document.getElementById("contactEmail").value;
+  const email = document.getElementById("contactEmail").value.trim().toLowerCase();
   const user = auth.currentUser;
 
-  if (!email) return;
+  if (!email) return alert("Escribe un correo");
+
+  if (email === user.email) {
+    return alert("No puedes agregarte a ti mismo");
+  }
+
+  // 🔥 VERIFICAR DUPLICADO
+  const snap = await new Promise(resolve => {
+    onSnapshot(collection(db, "chats"), (s) => resolve(s), { onlyOnce: true });
+  });
+
+  let exists = false;
+
+  snap.forEach(d => {
+    const c = d.data();
+    if (c.users.includes(user.email) && c.users.includes(email)) {
+      exists = true;
+    }
+  });
+
+  if (exists) {
+    return alert("Ya tienes este contacto");
+  }
 
   await addDoc(collection(db, "chats"), {
     users: [user.email, email]
@@ -248,7 +247,7 @@ window.addContact = async () => {
   closeModal();
 };
 
-// ================= CARGAR CHATS =================
+// ================= CHATS =================
 function loadChats() {
   const user = auth.currentUser;
 
@@ -299,10 +298,7 @@ function listenMessages(chatId) {
       const msg = document.createElement("div");
       msg.className = "msg " + (m.sender === auth.currentUser.email ? "me" : "other");
 
-      msg.innerHTML = `
-        ${m.text || ""}
-        ${m.image ? `<br><img src="${m.image}">` : ""}
-      `;
+      msg.textContent = m.text;
 
       div.appendChild(msg);
     });
@@ -311,12 +307,12 @@ function listenMessages(chatId) {
   });
 }
 
-// ================= ENVIAR MENSAJE =================
+// ================= ENVIAR =================
 window.sendMsg = async () => {
   const text = document.getElementById("msg").value;
   const user = auth.currentUser;
 
-  if (!currentChat) return;
+  if (!text || !currentChat) return;
 
   await addDoc(collection(db, "messages"), {
     chatId: currentChat,
@@ -327,25 +323,6 @@ window.sendMsg = async () => {
 
   document.getElementById("msg").value = "";
 };
-
-// ================= SUBIR ARCHIVO =================
-document.getElementById("file").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  const user = auth.currentUser;
-
-  if (!file || !currentChat) return;
-
-  const fileRef = ref(storage, "chat/" + Date.now() + file.name);
-  await uploadBytes(fileRef, file);
-  const url = await getDownloadURL(fileRef);
-
-  await addDoc(collection(db, "messages"), {
-    chatId: currentChat,
-    sender: user.email,
-    image: url,
-    timestamp: Date.now()
-  });
-});
 
 </script>
 
